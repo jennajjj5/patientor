@@ -5,6 +5,7 @@ import { setPatient, useStateValue } from "../state";
 import { Patient } from "../types";
 import { apiBaseUrl } from "../constants";
 import { Container, Icon } from "semantic-ui-react";
+import EntryDetails from "./entry";
 
 const PatientPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,15 +35,26 @@ const PatientPage = () => {
     return "genderless";
   };
 
+  const containerStyle = {
+    padding: "1rem 0.5rem",
+  };
+
   return (
     <Container>
-      <Container>
-        <h1 style={{ display: "inline" }}>{patient.name}</h1>
+      <Container style={containerStyle}>
+        <h2 style={{ display: "inline" }}>{patient.name}</h2>
         <Icon className={genderIconClass()} style={{ fontSize: "1.7rem" }} />
       </Container>
-      <Container>
+      <Container style={containerStyle}>
         <p>ssn: {patient.ssn}</p>
         <p>occupation: {patient.occupation}</p>
+      </Container>
+      <Container style={containerStyle}>
+        <h3>entries</h3>
+        {patient.entries &&
+          patient.entries.map((entry) => (
+            <EntryDetails key={entry.id} entry={entry} />
+          ))}
       </Container>
     </Container>
   );
