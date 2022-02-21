@@ -2,14 +2,19 @@ import React from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { setPatient, useStateValue } from "../state";
-import { Patient } from "../types";
+import { Entry, Patient } from "../types";
 import { apiBaseUrl } from "../constants";
-import { Container, Icon } from "semantic-ui-react";
+import { Button, Container, Icon } from "semantic-ui-react";
 import EntryDetails from "./entry";
+import AddEntryModal from "../AddEntryModal";
+import { EntryFormValues } from "../AddEntryModal/AddEntryForm";
 
 const PatientPage = () => {
   const { id } = useParams<{ id: string }>();
   const [{ patient }, dispatch] = useStateValue();
+
+  const [modalOpen, setModalOpen] = React.useState<boolean>(false);
+  const [error, setError] = React.useState<string | undefined>();
 
   React.useEffect(() => {
     void axios.get<void>(`${apiBaseUrl}/patients/${id}`);
@@ -26,6 +31,34 @@ const PatientPage = () => {
     };
     if (!patient || id !== patient.id) void fetchPatient();
   }, [dispatch]);
+
+  const openModal = (): void => setModalOpen(true);
+
+  const closeModal = (): void => {
+    setModalOpen(false);
+    setError(undefined);
+  };
+
+  const submitNewEntry = async (values: EntryFormValues) => {
+    try {
+      console.log(values);
+      const { data: newEntry } = await axios.post<Entry>(
+        `${apiBaseUrl}/patients/${id}/entries`,
+        values
+      );
+      console.log(newEntry);
+      if (patient) {
+        patient.entries = patient.entries
+          ? patient.entries.concat(newEntry)
+          : [newEntry];
+        dispatch(setPatient(patient));
+      }
+      closeModal();
+    } catch (e) {
+      console.error(e.response?.data || "Unknown Error");
+      setError(e.response?.data?.error || "Unknown error");
+    }
+  };
 
   if (!patient) return <div>Patient not found</div>;
 
@@ -56,6 +89,13 @@ const PatientPage = () => {
             <EntryDetails key={entry.id} entry={entry} />
           ))}
       </Container>
+      <AddEntryModal
+        modalOpen={modalOpen}
+        onSubmit={submitNewEntry}
+        error={error}
+        onClose={closeModal}
+      />
+      <Button onClick={() => openModal()}>Add New Entry</Button>
     </Container>
   );
 };
